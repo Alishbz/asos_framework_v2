@@ -78,6 +78,7 @@ Follow these steps to include ASOS Framework in your projects:
 You can develop your own applications using ASOS Framework. Below is a simple usage example:
 
 
+simple installation:
 
 ```cpp 
 #include "asos_root/asos.h"
@@ -92,7 +93,19 @@ int main(int argc, char *argv[])
 }
 ```
 
-##Contributing
+
+Super object:
+
+```cpp 
+#include "asos_root/asos.h"
+
+/** OS HANDLER **/
+static asos_object_t ASOS;
+ 
+```
+
+
+## Contributing
 
 To contribute to ASOS Framework, please follow these steps:
 
@@ -102,5 +115,5 @@ Commit your changes: git commit -am 'Add new feature'
 Push to the branch: git push origin my-feature
 Create a Pull Request.
 
-##License
+## License
 This project is licensed under the MIT License. See the LICENSE file for more information.
