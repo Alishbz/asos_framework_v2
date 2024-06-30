@@ -1,0 +1,373 @@
+/****************************************************************************************
+* ALI SAHBAZ
+*
+* 
+* FKT Gateway v1.0
+*
+* Date          : 17.05.2023
+* By            : Saykal Electronics & Software Ltd.
+* e-mail        : info@saykal.com , ali.sahbaz@saykal.com */
+
+#include "main.h"
+#include "hardware_init.h"
+#include "debug_print.h"
+#include "usb_task.h" 
+#include "usbd_cdc_if.h"
+
+
+/** @asosFRAMEWORK ****/ 
+#include "asos.h" 
+  
+#include "asos_blinky_test.h"      // test app 
+#include "asos_usb_rr_test.h"      // test app
+#include "saykal_gui_test_api.h"   // test app
+ 
+static void _mcall_device_tree_load(asos_object_t   *_ASOS);   // TODO -> create a dif .h and .c for this
+ 
+static asos_object_t   ASOS;
+ 
+#define    USB_CALLER     0x11  /** mailbox KEYs **/
+#define    BLINKY_CALLER  0x12
+
+void LIST_TESTER(void);
+
+int main(void)
+{ 
+  mcu_hardware_config();  
+      
+  asos_create(&ASOS,
+              5,     /**  CONTEXT SWITCH MS **/
+              1000); /**  SYSTICK US        **/
+  
+  _mcall_device_tree_load( &ASOS );
+
+  /**  APP   **/ 
+  
+  blinky_obj_t blinky;
+  
+  asos_app_create(&ASOS , 
+                  &blinky, 
+                  &blinky_create,
+                  &blinky_delete, 
+                  &blinky_task,
+                  ASOS_TASK_PRIO_2);
+   
+  usb_t usb_test_1,usb_test_2; 
+  usb_test_1.id = 2;
+  usb_test_2.id = 3;
+  
+  asos_app_create(&ASOS , 
+                  &usb_test_1, 
+                  &usb_create,
+                  NULL, 
+                  &usb_process,
+                  ASOS_TASK_PRIO_3);
+   
+  asos_app_create(&ASOS , 
+                  &usb_test_2, 
+                  &usb_create,
+                  NULL, 
+                  &usb_process,
+                  ASOS_TASK_PRIO_7);
+  
+  gui_test_obj_t gui_test_obj;
+    
+  asos_app_create(&ASOS , 
+                  &gui_test_obj, 
+                  &gui_test_create,
+                  &gui_test_delete, 
+                  &gui_test_task,
+                  ASOS_TASK_PRIO_9);
+  
+  asos_mailbox_create(&ASOS  ,
+                      USB_TO_BLINKY_MAILBOX,  
+                      USB_CALLER,   
+                      BLINKY_CALLER);
+ 
+  asos_mailbox_write (&ASOS ,
+                      USB_TO_BLINKY_MAILBOX,  
+                      USB_CALLER ,       
+                      (const QUEUE_DATA_TYPE* )"test 123 message" );
+  
+  asos_mailbox_write (&ASOS ,
+                      USB_TO_BLINKY_MAILBOX,  
+                      BLINKY_CALLER ,       
+                      (const QUEUE_DATA_TYPE* )"xtest 45678 message" );  
+  
+  
+  QUEUE_DATA_TYPE reader[100]; 
+  
+  memset(reader , 0 , 100);
+   
+  asos_mailbox_read  (&ASOS ,    
+                      USB_TO_BLINKY_MAILBOX,  
+                      BLINKY_CALLER ,       
+                      ( QUEUE_DATA_TYPE* )reader , 
+                      100);   
+  
+  memset(reader , 0 , 100);
+  
+  asos_mailbox_read  (&ASOS ,
+                      USB_TO_BLINKY_MAILBOX,  
+                      USB_CALLER ,       
+                      ( QUEUE_DATA_TYPE* )reader , 
+                      100);   
+  
+  asos_print(&ASOS , " APP USB & BLINKY TESTER INIT DONE ");
+  
+  LIST_TESTER();
+  
+  asos_app_process_run( &ASOS );    
+}
+
+
+void mcall_app_1_ms_timer_interrupt(void)
+{
+  asos_timer_process_run( &ASOS );
+}
+
+
+
+
+
+
+
+/*****************************************************************/
+
+static asos_list_t       my_list;  // TODO bunu asos.h yönetsin
+static asos_list_node_t  my_node_1;
+static asos_list_node_t  my_node_2;
+static asos_list_node_t  my_node_3;
+static asos_list_node_t  my_node_4;
+
+void LIST_TESTER(void)
+{
+ 
+  asos_xlist_create(&my_list , 
+                    ASOS_LIST_MODE_REV_SORTED);
+  
+  asos_xlist_node_insert(&my_list , 
+                         &my_node_2, 
+                         NULL,
+                         (list_data_type)10);
+    
+  asos_xlist_node_insert(&my_list , 
+                         &my_node_1, 
+                         NULL,
+                         (list_data_type)8);
+  
+  asos_xlist_node_insert(&my_list , 
+                         &my_node_4, 
+                         NULL,
+                         (list_data_type)13);
+  
+  asos_xlist_node_insert(&my_list , 
+                         &my_node_3, 
+                         NULL,
+                         (list_data_type)12);
+  
+
+   
+  asos_list_t *_my_list_holder = asos_xlist_goto_root_list(&my_node_3);
+  
+  asos_list_node_t * _find_node = asos_xlist_get_node_with_index(&my_list , 2);
+  
+  _find_node = _find_node;
+  
+  asos_xlist_node_delete(&my_list , 
+                         &my_node_3);
+  
+  _find_node = asos_xlist_get_node_with_data(&my_list , 13);
+  _find_node = asos_xlist_get_node_with_data(&my_list , 12);
+  
+   _find_node = _find_node;
+}
+
+
+
+
+
+
+
+
+/*******************************************************************/
+/**************************************/
+/*** MCALL.h *********/
+
+
+
+
+static unsigned char _uart1_data;
+
+void mcall_uart1_receive(unsigned char data){
+  
+  _uart1_data = data;
+  
+  asos_callback_signal(&ASOS ,
+                       USER_UART1_INT); 
+}
+
+
+
+static void _user_uart1_print( const char *str , unsigned short lenght ){ 
+  huart2_nextion_data_send((unsigned char*)str , (unsigned short )lenght);
+}
+  
+
+static void _led_1_on(void){
+ HAL_GPIO_WritePin(GPIOB, STATUS_LED2_Pin, GPIO_PIN_SET);
+}
+
+static void _led_1_off(void){
+ HAL_GPIO_WritePin(GPIOB, STATUS_LED2_Pin, GPIO_PIN_RESET);
+}
+ 
+static ASOS_USER_FOUT  _idle_task( asos_task_t * os)
+{
+  //asos_object_t *_os = ASOS_TASK_TO_OS(os); 
+  
+  /** look -> @idleSleepDescription **/
+  
+  //asos_print(_os , "idle task ");
+  
+  return ASOS_USER_TASK_SUCCESS; 
+}
+
+static ASOS_USER_FOUT  _sleep_mode_on( asos_task_t * os )
+{
+  //asos_object_t *_os = ASOS_TASK_TO_OS(os); 
+   
+  /** look -> @idleSleepDescription **/
+  
+  //asos_print(_os , "sleep on");
+  
+  return ASOS_USER_TASK_SUCCESS; 
+}
+
+static ASOS_USER_FOUT  _sleep_mode_off( asos_task_t * os )
+{
+  //asos_object_t *_os = ASOS_TASK_TO_OS(os); 
+  
+  /** look -> @idleSleepDescription **/
+  
+  //asos_print(_os , "sleep off");
+  
+  return ASOS_USER_TASK_SUCCESS; 
+}
+
+
+static void _user_test_print( const char *str , unsigned short lenght ){ 
+   CDC_Transmit_FS((uint8_t*)str, lenght);
+}
+
+
+
+
+
+ 
+#ifdef ASOS_ASOS_TEST_TDD_MODE_ACTIVE 
+
+  ASOS_TEST_HARNESS(asos, asos_create1) 
+  {
+    ASOS_TEST_CHECK(6 , 6); 
+   
+    ASOS_TEST_STOP();  
+  }
+  
+  ASOS_TEST_HARNESS(asos, asos_create2) 
+  {
+    ASOS_TEST_CHECK(5 , 6); 
+   
+    ASOS_TEST_STOP();   
+  }
+#endif
+
+
+
+static void _mcall_device_tree_load(asos_object_t   *_ASOS)
+{  
+  asos_device_tree_function_call_u _f_led_on , _f_led_off;
+  
+  asos_device_tree_function_call_u  _uart1_sender_def;
+    
+  _uart1_sender_def.call_std_sender =  &_user_uart1_print; 
+  _f_led_on.call_empty_return_and_input =  &_led_1_on;
+  _f_led_off.call_empty_return_and_input =  &_led_1_off;  
+   
+  /** create MCALL function calls **/
+  
+  asos_fcall_create(_ASOS  ,
+                     USER_LED_1_ON,
+                     &_f_led_on);
+  
+  asos_fcall_create(_ASOS  ,
+                     USER_LED_1_OFF,
+                     &_f_led_off);
+  
+  asos_fcall_create(_ASOS  ,
+                     UART_1_SENDER,
+                     &_uart1_sender_def);
+
+  
+  
+  
+  
+  /** create MCALL interrupts **/
+  
+  asos_callback_create(_ASOS ,
+                       USER_IN_1_INT,
+                       NULL);  
+   
+  asos_callback_create(_ASOS ,
+                       USER_UART1_INT,
+                       &_uart1_data);   
+  
+  
+  
+  
+  
+  /** user printer assign ***/
+  
+  asos_print_create(_ASOS , 
+                    &_user_uart1_print );
+  
+  
+  
+  
+  /** asos OS itself own debug printer assign ***/
+    
+  asos_debug_create(_ASOS ,
+                    &_user_test_print );
+
+  asos_debug_mode_on(_ASOS);
+ 
+  
+  
+  /** sleep and idle task **/
+  
+  asos_idle_task_create(_ASOS ,   /*** asos_idle_sleep_pasive( _ASOS );  **/
+                       &_idle_task,
+                       &_sleep_mode_on,
+                       &_sleep_mode_off);
+  
+  /** YOU CAN:
+  asos_idle_task_create(_ASOS ,
+                       &_idle_task,
+                       NULL,
+                       NULL);
+  */
+  
+  asos_idle_sleep_active( _ASOS );
+  asos_idle_sleep_pasive( _ASOS );
+  
+  /** TDD **/
+  ASOS_TEST_RUN(&ASOS, asos, asos_create1);
+  
+  asos_delay(_ASOS ,  500);
+  
+  ASOS_TEST_RUN(&ASOS, asos, asos_create2);
+  
+  asos_delay(_ASOS ,  500);
+  
+  
+}
