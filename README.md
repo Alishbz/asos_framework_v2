@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
     // Example of creating and scheduling a app
     asos_app_create(...);
 }
-
+```
 
 ##Contributing
 
