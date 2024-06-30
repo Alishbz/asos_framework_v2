@@ -144,11 +144,21 @@ int main(int argc, char *argv[])
 
 To contribute to ASOS Framework, please follow these steps:
 
-Fork the project.
-Create a new branch: git checkout -b my-feature
-Commit your changes: git commit -am 'Add new feature'
-Push to the branch: git push origin my-feature
-Create a Pull Request.
+1. **Fork the project.**
+2. **Create a new branch:** 
+    ```bash
+    git checkout -b my-feature
+    ```
+3. **Commit your changes:** 
+    ```bash
+    git commit -am 'Add new feature'
+    ```
+4. **Push to the branch:** 
+    ```bash
+    git push origin my-feature
+    ```
+5. **Create a Pull Request.**
+
 
 ## License
 This project is licensed under the MIT License. See the LICENSE file for more information.
