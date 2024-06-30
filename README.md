@@ -1,5 +1,7 @@
 # ASOS Framework
 
+ASOS ( Ali Sahbaz Operating System ) framework ..
+
 ASOS Framework is a custom general-purpose operating system designed using C/C++. This framework offers essential OS functionalities such as task and timing management, along with various data structures and design patterns. It is secure, portable, continuously expandable and greatly supports independent project development for your embedded software projects.
 
 ## Contents
