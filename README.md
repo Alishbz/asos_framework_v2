@@ -104,6 +104,41 @@ static asos_object_t ASOS;
  
 ```
 
+simple app:
+
+```cpp 
+#include "asos_root/asos.h"
+#include "asos_root/test_apps/asos_blinky_test.h"
+
+static asos_object_t ASOS;
+static blinky_obj_t  blink_app;
+
+static void systick_callback_mocking()  // 1 ms
+{
+  asos_timer_process_run( &ASOS );
+}
+
+int main(int argc, char *argv[])
+{ 
+     asos_create(&ASOS,
+             5,       /**  CONTEXT SWITCH MS **/
+             1000);   /**  SYSTICK US        **/
+
+    // You can load your hardware RTE layer and connect ASOS here
+
+     asos_app_create(&ASOS ,
+                 &blink_app,
+                 &blinky_create,
+                 &blinky_delete,
+                 &blinky_task,
+                 ASOS_TASK_PRIO_4);
+
+    asos_debug_mode_on(&ASOS);
+
+    asos_app_process_run( &ASOS );
+}
+```
+
 
 ## Contributing
 
